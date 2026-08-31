@@ -44,10 +44,10 @@ export default class HeadingJoystickPlugin extends Plugin {
     this.watcher.start();
 
     this.registerEvent(
-      this.app.workspace.on("active-leaf-change", () => this.evaluate())
+      this.app.workspace.on("active-leaf-change", () => this.schedulePositionSettle())
     );
     this.registerEvent(
-      this.app.workspace.on("layout-change", () => this.evaluate())
+      this.app.workspace.on("layout-change", () => this.schedulePositionSettle())
     );
   }
 
@@ -64,11 +64,36 @@ export default class HeadingJoystickPlugin extends Plugin {
       this.debugEl.remove();
       this.debugEl = null;
     }
+    if (this.rafHandle !== null) {
+      cancelAnimationFrame(this.rafHandle);
+      this.rafHandle = null;
+    }
   }
 
   private handleKeyboard(_state: KeyboardState): void {
-    this.evaluate();
+    this.schedulePositionSettle();
   }
+
+  private rafHandle: number | null = null;
+  private settleUntil = 0;
+
+  // Obsidian's own .mobile-toolbar (and possibly other native chrome) can
+  // appear/resize/animate independent of any DOM event we listen for, so a
+  // short polling burst after a trigger keeps the knob glued to it smoothly
+  // instead of jumping once an event finally fires.
+  private schedulePositionSettle(durationMs = 700): void {
+    this.settleUntil = Date.now() + durationMs;
+    if (this.rafHandle === null) this.tick();
+  }
+
+  private tick = (): void => {
+    this.evaluate();
+    if (Date.now() < this.settleUntil) {
+      this.rafHandle = requestAnimationFrame(this.tick);
+    } else {
+      this.rafHandle = null;
+    }
+  };
 
   private evaluate(): void {
     if (!this.joystick || !this.watcher) return;
@@ -76,22 +101,38 @@ export default class HeadingJoystickPlugin extends Plugin {
       this.watcher.getState();
     const editorReady = this.isEditorActive();
 
-    // Editor focus is the primary signal. On iOS the webview itself resizes
-    // when the keyboard opens, so keyboardHeight is often 0 and fixed
-    // bottom-anchoring already sits above the keyboard; when the webview does
-    // NOT resize, keyboardHeight compensates.
     if (editorFocused && editorReady) {
-      const bottomOffset =
-        keyboardHeight + this.settings.bottomMargin + this.mobileToolbarHeight();
-      this.joystick.show(bottomOffset);
+      const { offset, source } = this.computeBottomOffset(keyboardHeight);
+      this.joystick.show(offset);
+      this.updateDebug(
+        `kb:${keyboardVisible ? "y" : "n"}/${Math.round(
+          keyboardHeight
+        )} src:${source} off:${Math.round(offset)}`
+      );
     } else {
       this.joystick.hide();
+      this.updateDebug(`hidden focus:${editorFocused ? "y" : "n"} editor:${editorReady ? "y" : "n"}`);
     }
-    this.updateDebug(
-      `kb:${keyboardVisible ? "y" : "n"}/${Math.round(keyboardHeight)} focus:${
-        editorFocused ? "y" : "n"
-      } editor:${editorReady ? "y" : "n"}`
-    );
+  }
+
+  // Obsidian positions .mobile-toolbar directly above the keyboard itself
+  // (it's their own solved problem), so anchoring off its real screen
+  // position sidesteps unreliable visualViewport keyboard-height detection
+  // in this webview. Falls back to the visualViewport estimate if the
+  // toolbar is absent (e.g. user disabled it in Obsidian's settings).
+  private computeBottomOffset(keyboardHeight: number): {
+    offset: number;
+    source: "toolbar" | "viewport";
+  } {
+    const toolbar = document.querySelector<HTMLElement>(".mobile-toolbar");
+    if (toolbar && toolbar.offsetParent !== null) {
+      const rect = toolbar.getBoundingClientRect();
+      const aboveToolbar = window.innerHeight - rect.top;
+      if (aboveToolbar > 0) {
+        return { offset: aboveToolbar + this.settings.bottomMargin, source: "toolbar" };
+      }
+    }
+    return { offset: keyboardHeight + this.settings.bottomMargin, source: "viewport" };
   }
 
   private debugEl: HTMLDivElement | null = null;
@@ -117,11 +158,6 @@ export default class HeadingJoystickPlugin extends Plugin {
     if (!view) return false;
     const mode = view.getMode();
     return mode === "source";
-  }
-
-  private mobileToolbarHeight(): number {
-    const el = document.querySelector<HTMLElement>(".mobile-toolbar");
-    return el ? el.offsetHeight : 0;
   }
 
   private handleCommit(state: JoystickState | null): void {

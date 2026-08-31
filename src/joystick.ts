@@ -126,8 +126,10 @@ export class Joystick {
   // called by the plugin when keyboard/focus state says the joystick should show
   show(bottomOffset: number): void {
     const rightOffset = this.settings.boundaryRadius + 12;
-    this.knobEl.style.right = `${rightOffset}px`;
-    this.knobEl.style.bottom = `${bottomOffset}px`;
+    // env(safe-area-inset-bottom) covers the home-indicator gesture area on
+    // notch-less-bezel iPhones, which bottomOffset alone doesn't account for.
+    this.knobEl.style.right = `calc(${rightOffset}px + env(safe-area-inset-right))`;
+    this.knobEl.style.bottom = `calc(${bottomOffset}px + env(safe-area-inset-bottom))`;
     this.knobEl.style.left = "";
     this.knobEl.style.top = "";
     this.knobEl.style.display = "flex";
