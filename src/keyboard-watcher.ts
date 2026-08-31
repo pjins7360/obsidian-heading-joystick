@@ -23,8 +23,13 @@ export class KeyboardWatcher {
       this.vv.addEventListener("resize", this.handleViewportResize);
       this.vv.addEventListener("scroll", this.handleViewportResize);
     }
+    // iOS Obsidian resizes the whole webview when the keyboard opens, so the
+    // visualViewport delta can stay ~0; window resize catches that case.
+    window.addEventListener("resize", this.handleViewportResize);
     document.addEventListener("focusin", this.handleFocusIn, true);
     document.addEventListener("focusout", this.handleFocusOut, true);
+    const active = document.activeElement as HTMLElement | null;
+    this.editorFocused = this.isEditorTarget(active);
     this.handleViewportResize();
   }
 
@@ -33,6 +38,7 @@ export class KeyboardWatcher {
       this.vv.removeEventListener("resize", this.handleViewportResize);
       this.vv.removeEventListener("scroll", this.handleViewportResize);
     }
+    window.removeEventListener("resize", this.handleViewportResize);
     document.removeEventListener("focusin", this.handleFocusIn, true);
     document.removeEventListener("focusout", this.handleFocusOut, true);
   }

@@ -10,3 +10,6 @@ data.json
 
 # system
 .DS_Store
+
+# omc runtime state
+.omc/

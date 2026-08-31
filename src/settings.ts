@@ -8,6 +8,7 @@ export interface HeadingJoystickSettings {
   bottomMargin: number;
   deadzonePercent: number;
   enableOnDesktop: boolean;
+  showDebug: boolean;
 }
 
 export const DEFAULT_SETTINGS: HeadingJoystickSettings = {
@@ -17,6 +18,7 @@ export const DEFAULT_SETTINGS: HeadingJoystickSettings = {
   bottomMargin: 12,
   deadzonePercent: 35,
   enableOnDesktop: false,
+  showDebug: false,
 };
 
 export class HeadingJoystickSettingTab extends PluginSettingTab {
@@ -109,6 +111,20 @@ export class HeadingJoystickSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.enableOnDesktop)
           .onChange(async (value) => {
             this.plugin.settings.enableOnDesktop = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Show debug overlay")
+      .setDesc(
+        "Shows keyboard/focus/editor detection state at the top of the screen. For troubleshooting only."
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showDebug)
+          .onChange(async (value) => {
+            this.plugin.settings.showDebug = value;
             await this.plugin.saveSettings();
           })
       );

@@ -46,6 +46,9 @@ export default class HeadingJoystickPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => this.evaluate())
     );
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => this.evaluate())
+    );
   }
 
   private deactivateFeature(): void {
@@ -56,6 +59,10 @@ export default class HeadingJoystickPlugin extends Plugin {
     if (this.joystick) {
       this.joystick.detach();
       this.joystick = null;
+    }
+    if (this.debugEl) {
+      this.debugEl.remove();
+      this.debugEl = null;
     }
   }
 
@@ -69,13 +76,40 @@ export default class HeadingJoystickPlugin extends Plugin {
       this.watcher.getState();
     const editorReady = this.isEditorActive();
 
-    if (keyboardVisible && editorFocused && editorReady) {
+    // Editor focus is the primary signal. On iOS the webview itself resizes
+    // when the keyboard opens, so keyboardHeight is often 0 and fixed
+    // bottom-anchoring already sits above the keyboard; when the webview does
+    // NOT resize, keyboardHeight compensates.
+    if (editorFocused && editorReady) {
       const bottomOffset =
         keyboardHeight + this.settings.bottomMargin + this.mobileToolbarHeight();
       this.joystick.show(bottomOffset);
     } else {
       this.joystick.hide();
     }
+    this.updateDebug(
+      `kb:${keyboardVisible ? "y" : "n"}/${Math.round(keyboardHeight)} focus:${
+        editorFocused ? "y" : "n"
+      } editor:${editorReady ? "y" : "n"}`
+    );
+  }
+
+  private debugEl: HTMLDivElement | null = null;
+
+  private updateDebug(text: string): void {
+    if (!this.settings.showDebug) {
+      if (this.debugEl) {
+        this.debugEl.remove();
+        this.debugEl = null;
+      }
+      return;
+    }
+    if (!this.debugEl) {
+      this.debugEl = document.createElement("div");
+      this.debugEl.addClass("heading-joystick-debug");
+      document.body.appendChild(this.debugEl);
+    }
+    this.debugEl.setText(text);
   }
 
   private isEditorActive(): boolean {
