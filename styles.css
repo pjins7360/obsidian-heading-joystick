@@ -1,0 +1,67 @@
+.heading-joystick-knob,
+.heading-joystick-boundary {
+  position: fixed;
+  z-index: var(--layer-modal, 100);
+  pointer-events: none;
+  border-radius: 50%;
+  box-sizing: border-box;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.heading-joystick-knob {
+  pointer-events: auto;
+  background-color: var(--interactive-accent, #7c6cf0);
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heading-joystick-knob.is-active {
+  opacity: 0.6;
+}
+
+.heading-joystick-boundary {
+  border: 2px solid var(--interactive-accent, #7c6cf0);
+  background-color: var(--background-modifier-hover, rgba(124, 108, 240, 0.15));
+  opacity: 0.6;
+}
+
+.heading-joystick-sector-label {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-normal, #dcddde);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.heading-joystick-sector-label.is-highlighted {
+  color: var(--text-on-accent, #ffffff);
+  background-color: var(--interactive-accent, #7c6cf0);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.heading-joystick-center-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: var(--text-muted, #999);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.heading-joystick-center-label.is-highlighted {
+  color: var(--text-on-accent, #ffffff);
+  background-color: var(--interactive-accent, #7c6cf0);
+  border-radius: 4px;
+  padding: 1px 4px;
+}

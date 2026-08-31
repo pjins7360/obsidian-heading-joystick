@@ -1,0 +1,12 @@
+# npm
+node_modules
+
+# build
+main.js
+*.js.map
+
+# obsidian
+data.json
+
+# system
+.DS_Store

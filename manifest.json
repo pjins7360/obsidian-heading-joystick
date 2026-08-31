@@ -1,0 +1,10 @@
+{
+  "id": "heading-joystick",
+  "name": "Heading Joystick",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "A touch joystick overlay for mobile that sets the current line's Markdown heading level (H1-H6 or plain text) with a thumb gesture.",
+  "author": "pjins7360",
+  "authorUrl": "https://github.com/pjins7360",
+  "isDesktopOnly": false
+}
